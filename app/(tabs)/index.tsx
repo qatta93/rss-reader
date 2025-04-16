@@ -1,31 +1,42 @@
-import { StyleSheet } from 'react-native';
+import { useEffect, useState } from "react";
+import { ScrollView } from "react-native";
+import { Card, Title, Paragraph, ActivityIndicator } from "react-native-paper";
+import axios from "axios";
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function Home() {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function TabOneScreen() {
+  useEffect(() => {
+    const fetchRSS = async () => {
+      try {
+        const res = await axios.get("https://api.rss2json.com/v1/api.json", {
+          params: {
+            rss_url: "https://www.nasa.gov/rss/dyn/breaking_news.rss",
+          },
+        });
+        setArticles(res.data.items);
+      } catch (error) {
+        console.error("Błąd podczas pobierania RSS:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRSS();
+  }, []);
+
+  if (loading) return <ActivityIndicator animating={true} />;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+    <ScrollView>
+      {articles.map((item) => (
+        <Card key={item.guid} style={{ margin: 10 }}>
+          <Card.Content>
+            <Title>{item.title}</Title>
+            <Paragraph>{item.pubDate}</Paragraph>
+          </Card.Content>
+        </Card>
+      ))}
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
