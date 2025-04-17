@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
 import {
   Card,
@@ -33,6 +34,7 @@ export default function Home() {
   );
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
@@ -106,22 +108,23 @@ export default function Home() {
     }, [])
   );
 
-const toggleReadStatus = async (feedId: string, articleId: string) => {
-  const alreadyRead = readArticles[feedId] || [];
-  const updated = [...new Set([...alreadyRead, articleId])];
-  const newState = { ...readArticles, [feedId]: updated };
+  const toggleReadStatus = async (feedId: string, articleId: string) => {
+    setReadArticles((prev) => {
+      const alreadyRead = prev[feedId] || [];
+      const updated = [...new Set([...alreadyRead, articleId])];
+      const newState = { ...prev, [feedId]: updated };
 
-  setReadArticles(newState);
-  await AsyncStorage.setItem("readArticles", JSON.stringify(newState));
+      AsyncStorage.setItem("readArticles", JSON.stringify(newState));
+      return newState;
+    });
 
-  setArticlesByFeed((prev) => {
-    const updatedArticles = prev[feedId]?.map((article) =>
-      article.guid === articleId ? { ...article, read: true } : article
-    );
-    return { ...prev, [feedId]: updatedArticles };
-  });
-};
-
+    setArticlesByFeed((prev) => {
+      const updatedArticles = prev[feedId]?.map((article) =>
+        article.guid === articleId ? { ...article, read: true } : article
+      );
+      return { ...prev, [feedId]: updatedArticles };
+    });
+  };
 
   const filteredArticles: Record<string, Article[]> = {};
   Object.entries(articlesByFeed).forEach(([feedId, articles]) => {
@@ -132,6 +135,13 @@ const toggleReadStatus = async (feedId: string, articleId: string) => {
         ? articles.filter((a) => a.read)
         : articles.filter((a) => !a.read);
   });
+
+  const searchFilteredArticles = (articles: Article[]) => {
+    if (!searchQuery) return articles;
+    return articles.filter((article) =>
+      article.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
 
   const handleSaveFeed = async (updatedFeed: Feed) => {
     const updatedFeeds = feeds.map((f) =>
@@ -175,6 +185,13 @@ const toggleReadStatus = async (feedId: string, articleId: string) => {
           ))}
         </View>
 
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Wyszukaj po tytule..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+
         {feeds.map((feed) => (
           <View key={feed.id} style={styles.feedSection}>
             <View style={styles.feedTitleRow}>
@@ -190,35 +207,37 @@ const toggleReadStatus = async (feedId: string, articleId: string) => {
               </TouchableOpacity>
             </View>
 
-            {filteredArticles[feed.id]?.map((item) => (
-              <Pressable
-                key={item.guid}
-                onPress={async () => {
-                  await toggleReadStatus(feed.id, item.guid);
-                  router.push({
-                    pathname: "../article",
-                    params: {
-                      title: item.title,
-                      pubDate: item.pubDate,
-                      content: item.content,
-                      link: item.link,
-                    },
-                  });
-                }}>
-                <Card
-                  style={[
-                    styles.card,
-                    item.read ? styles.readCard : styles.unreadCard,
-                  ]}>
-                  <Card.Content>
-                    <Title>{item.title}</Title>
-                    <Paragraph>
-                      {new Date(item.pubDate).toLocaleString()}
-                    </Paragraph>
-                  </Card.Content>
-                </Card>
-              </Pressable>
-            ))}
+            {searchFilteredArticles(filteredArticles[feed.id] || []).map(
+              (item) => (
+                <Pressable
+                  key={item.guid}
+                  onPress={() => {
+                    toggleReadStatus(feed.id, item.guid);
+                    router.push({
+                      pathname: "../article",
+                      params: {
+                        title: item.title,
+                        pubDate: item.pubDate,
+                        content: item.content,
+                        link: item.link,
+                      },
+                    });
+                  }}>
+                  <Card
+                    style={[
+                      styles.card,
+                      item.read ? styles.readCard : styles.unreadCard,
+                    ]}>
+                    <Card.Content>
+                      <Title>{item.title}</Title>
+                      <Paragraph>
+                        {new Date(item.pubDate).toLocaleString()}
+                      </Paragraph>
+                    </Card.Content>
+                  </Card>
+                </Pressable>
+              )
+            )}
           </View>
         ))}
       </ScrollView>
@@ -291,5 +310,16 @@ const styles = StyleSheet.create({
   editText: {
     fontSize: 12,
     color: "#555",
+  },
+  searchInput: {
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 16,
+    paddingLeft: 10,
+    fontSize: 16,
+    width: 300,
+    alignSelf: "center",
   },
 });
