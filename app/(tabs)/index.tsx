@@ -39,6 +39,8 @@ export default function Home() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
 
+  const [favorites, setFavorites] = useState<Record<string, string[]>>({});
+
   const router = useRouter();
 
   const defaultFeeds: Feed[] = [
@@ -95,6 +97,10 @@ export default function Home() {
       );
 
       setArticlesByFeed(articlesByFeedTemp);
+
+      const storedFavorites = await AsyncStorage.getItem("favorites");
+      const favoritesData = storedFavorites ? JSON.parse(storedFavorites) : {};
+      setFavorites(favoritesData);
     } catch (e) {
       console.error("Błąd ładowania feedów:", e);
     } finally {
@@ -123,6 +129,20 @@ export default function Home() {
         article.guid === articleId ? { ...article, read: true } : article
       );
       return { ...prev, [feedId]: updatedArticles };
+    });
+  };
+
+
+  const toggleFavorite = async (feedId: string, articleId: string) => {
+    setFavorites((prev) => {
+      const alreadyFavorite = prev[feedId] || [];
+      const updated = alreadyFavorite.includes(articleId)
+        ? alreadyFavorite.filter((id) => id !== articleId)
+        : [...alreadyFavorite, articleId];
+      const newState = { ...prev, [feedId]: updated };
+
+      AsyncStorage.setItem("favorites", JSON.stringify(newState));
+      return newState;
     });
   };
 
@@ -184,7 +204,6 @@ export default function Home() {
             </TouchableOpacity>
           ))}
         </View>
-
         <TextInput
           style={styles.searchInput}
           placeholder="Wyszukaj po tytule..."
@@ -228,11 +247,26 @@ export default function Home() {
                       styles.card,
                       item.read ? styles.readCard : styles.unreadCard,
                     ]}>
-                    <Card.Content>
-                      <Title>{item.title}</Title>
-                      <Paragraph>
-                        {new Date(item.pubDate).toLocaleString()}
-                      </Paragraph>
+                    <Card.Content style={styles.cardContent}>
+                      <View>
+                        <Title>{item.title}</Title>
+                        <Paragraph>
+                          {new Date(item.pubDate).toLocaleString()}
+                        </Paragraph>
+                      </View>
+                      <View style={styles.articleActions}>
+                        <TouchableOpacity
+                          onPress={() => toggleFavorite(feed.id, item.guid)}>
+                          <IconButton
+                            icon={
+                              favorites[feed.id]?.includes(item.guid)
+                                ? "heart"
+                                : "heart-outline"
+                            }
+                            size={20}
+                          />
+                        </TouchableOpacity>
+                      </View>
                     </Card.Content>
                   </Card>
                 </Pressable>
@@ -270,6 +304,11 @@ const styles = StyleSheet.create({
   card: {
     marginVertical: 6,
     marginHorizontal: 4,
+  },
+  cardContent: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between"
   },
   readCard: {
     backgroundColor: "rgb(249, 249, 249)",
@@ -321,5 +360,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: 300,
     alignSelf: "center",
+  },
+  articleActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
   },
 });
