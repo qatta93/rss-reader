@@ -80,8 +80,6 @@ export default function ManageFeeds() {
     setName("");
     setUrl("");
     setErrors({});
-
-    setTimeout(() => setFeedbackMessage(null), 3000);
   };
 
   return (
@@ -95,6 +93,7 @@ export default function ManageFeeds() {
         onChangeText={(text) => {
           setName(text);
           if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+          if (feedbackMessage) setFeedbackMessage(null);
         }}
       />
       {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
@@ -106,6 +105,7 @@ export default function ManageFeeds() {
         onChangeText={(text) => {
           setUrl(text);
           if (errors.url) setErrors((e) => ({ ...e, url: undefined }));
+          if (feedbackMessage) setFeedbackMessage(null);
         }}
       />
       {errors.url && <Text style={styles.errorText}>{errors.url}</Text>}
