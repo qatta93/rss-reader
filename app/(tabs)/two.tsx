@@ -8,13 +8,7 @@ import {
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-type Feed = {
-  id: string;
-  name: string;
-  url: string;
-  createdAt: string;
-};
+import { Feed } from "@/constants/types";
 
 export default function ManageFeeds() {
   const [feeds, setFeeds] = useState<Feed[]>([]);

@@ -1,26 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ScrollView, Pressable, Text, View, StyleSheet } from "react-native";
-import { Card, Title, Paragraph, ActivityIndicator } from "react-native-paper";
+import {
+  Card,
+  Title,
+  Paragraph,
+  ActivityIndicator,
+  IconButton,
+} from "react-native-paper";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-
-type Feed = {
-  id: string;
-  name: string;
-  url: string;
-  createdAt: string;
-};
-
-type Article = {
-  title: string;
-  pubDate: string;
-  link: string;
-  content: string;
-  guid: string;
-  feedId: string;
-};
+import { Article, Feed } from "@/constants/types";
+import EditFeedModal from "@/components/EditFeedModal";
 
 export default function Home() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
@@ -28,6 +20,8 @@ export default function Home() {
     Record<string, Article[]>
   >({});
   const [loading, setLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
   const router = useRouter();
 
   const defaultFeeds: Feed[] = [
@@ -93,13 +87,43 @@ export default function Home() {
     }, [])
   );
 
+  const handleEditFeed = (feed: Feed) => {
+    setSelectedFeed(feed);
+    setIsModalVisible(true);
+  };
+
+  const handleSaveFeed = (updatedFeed: Feed) => {
+    const updatedFeeds = feeds.map((feed) =>
+      feed.id === updatedFeed.id ? updatedFeed : feed
+    );
+    setFeeds(updatedFeeds);
+    AsyncStorage.setItem("feeds", JSON.stringify(updatedFeeds));
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+    setSelectedFeed(null);
+  };
+
   if (loading) return <ActivityIndicator animating={true} />;
 
   return (
     <ScrollView style={{ padding: 10 }}>
       {feeds.map((feed) => (
         <View key={feed.id} style={styles.feedSection}>
-          <Text style={styles.feedTitle}>{feed.name}</Text>
+          <View style={styles.feedHeader}>
+            <Text style={styles.feedTitle}>{feed.name}</Text>
+            <Pressable
+              onPress={() => handleEditFeed(feed)}
+              style={styles.editButton}>
+              <IconButton
+                icon="pencil"
+                size={20}
+              />
+              <Text style={styles.editText}>Edytuj Feed</Text>
+            </Pressable>
+          </View>
+
           {articlesByFeed[feed.id]?.map((item) => (
             <Pressable
               key={item.guid}
@@ -126,6 +150,12 @@ export default function Home() {
           ))}
         </View>
       ))}
+      <EditFeedModal
+        visible={isModalVisible}
+        feed={selectedFeed}
+        onClose={handleCloseModal}
+        onSave={handleSaveFeed}
+      />
     </ScrollView>
   );
 }
@@ -134,11 +164,25 @@ const styles = StyleSheet.create({
   feedSection: {
     marginBottom: 24,
   },
+  feedHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   feedTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 8,
     marginLeft: 4,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  editText: {
+    fontSize: 16,
+    marginLeft: 8,
+    color: "#007BFF",
   },
   card: {
     marginVertical: 6,
