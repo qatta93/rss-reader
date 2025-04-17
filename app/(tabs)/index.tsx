@@ -1,5 +1,12 @@
-import { useState, useCallback, useEffect } from "react";
-import { ScrollView, Pressable, Text, View, StyleSheet } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ScrollView,
+  Pressable,
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import {
   Card,
   Title,
@@ -14,14 +21,22 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Article, Feed } from "@/constants/types";
 import EditFeedModal from "@/components/EditFeedModal";
 
+type FilterType = "all" | "read" | "unread";
+
 export default function Home() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [articlesByFeed, setArticlesByFeed] = useState<
     Record<string, Article[]>
   >({});
+  const [readArticles, setReadArticles] = useState<Record<string, string[]>>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [filter, setFilter] = useState<FilterType>("all");
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
+
   const router = useRouter();
 
   const defaultFeeds: Feed[] = [
@@ -40,12 +55,19 @@ export default function Home() {
       const localFeeds: Feed[] = stored ? JSON.parse(stored) : [];
 
       const allFeeds = [...defaultFeeds, ...localFeeds];
-      setFeeds(allFeeds);
+      const uniqueFeeds = allFeeds.filter(
+        (feed, index, self) => index === self.findIndex((f) => f.id === feed.id)
+      );
+      setFeeds(uniqueFeeds);
+
+      const storedRead = await AsyncStorage.getItem("readArticles");
+      const readData = storedRead ? JSON.parse(storedRead) : {};
+      setReadArticles(readData);
 
       const articlesByFeedTemp: Record<string, Article[]> = {};
 
       await Promise.all(
-        allFeeds.map(async (feed) => {
+        uniqueFeeds.map(async (feed) => {
           try {
             const res = await axios.get(
               "https://api.rss2json.com/v1/api.json",
@@ -61,6 +83,7 @@ export default function Home() {
               content: item.content || item.description,
               guid: item.guid,
               feedId: feed.id,
+              read: readData[feed.id]?.includes(item.guid) ?? false,
             }));
           } catch (error) {
             console.error(`Błąd pobierania artykułów z ${feed.name}:`, error);
@@ -77,86 +100,136 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    fetchFeedsAndArticles();
-  }, []);
-
   useFocusEffect(
     useCallback(() => {
       fetchFeedsAndArticles();
     }, [])
   );
 
-  const handleEditFeed = (feed: Feed) => {
-    setSelectedFeed(feed);
-    setIsModalVisible(true);
-  };
+const toggleReadStatus = async (feedId: string, articleId: string) => {
+  const alreadyRead = readArticles[feedId] || [];
+  const updated = [...new Set([...alreadyRead, articleId])];
+  const newState = { ...readArticles, [feedId]: updated };
 
-  const handleSaveFeed = (updatedFeed: Feed) => {
-    const updatedFeeds = feeds.map((feed) =>
-      feed.id === updatedFeed.id ? updatedFeed : feed
+  setReadArticles(newState);
+  await AsyncStorage.setItem("readArticles", JSON.stringify(newState));
+
+  setArticlesByFeed((prev) => {
+    const updatedArticles = prev[feedId]?.map((article) =>
+      article.guid === articleId ? { ...article, read: true } : article
     );
-    setFeeds(updatedFeeds);
-    AsyncStorage.setItem("feeds", JSON.stringify(updatedFeeds));
-  };
+    return { ...prev, [feedId]: updatedArticles };
+  });
+};
 
-  const handleCloseModal = () => {
-    setIsModalVisible(false);
-    setSelectedFeed(null);
+
+  const filteredArticles: Record<string, Article[]> = {};
+  Object.entries(articlesByFeed).forEach(([feedId, articles]) => {
+    filteredArticles[feedId] =
+      filter === "all"
+        ? articles
+        : filter === "read"
+        ? articles.filter((a) => a.read)
+        : articles.filter((a) => !a.read);
+  });
+
+  const handleSaveFeed = async (updatedFeed: Feed) => {
+    const updatedFeeds = feeds.map((f) =>
+      f.id === updatedFeed.id ? updatedFeed : f
+    );
+    const customFeeds = updatedFeeds.filter(
+      (f) => !defaultFeeds.find((df) => df.id === f.id)
+    );
+
+    await AsyncStorage.setItem("feeds", JSON.stringify(customFeeds));
+    setFeeds(updatedFeeds);
+    fetchFeedsAndArticles();
   };
 
   if (loading) return <ActivityIndicator animating={true} />;
 
   return (
-    <ScrollView style={{ padding: 10 }}>
-      {feeds.map((feed) => (
-        <View key={feed.id} style={styles.feedSection}>
-          <View style={styles.feedHeader}>
-            <Text style={styles.feedTitle}>{feed.name}</Text>
-            <Pressable
-              onPress={() => handleEditFeed(feed)}
-              style={styles.editButton}>
-              <IconButton
-                icon="pencil"
-                size={20}
-              />
-              <Text style={styles.editText}>Edytuj Feed</Text>
-            </Pressable>
-          </View>
-
-          {articlesByFeed[feed.id]?.map((item) => (
-            <Pressable
-              key={item.guid}
-              onPress={() =>
-                router.push({
-                  pathname: "../article",
-                  params: {
-                    title: item.title,
-                    pubDate: item.pubDate,
-                    content: item.content,
-                    link: item.link,
-                  },
-                })
-              }>
-              <Card style={styles.card}>
-                <Card.Content>
-                  <Title>{item.title}</Title>
-                  <Paragraph>
-                    {new Date(item.pubDate).toLocaleString()}
-                  </Paragraph>
-                </Card.Content>
-              </Card>
-            </Pressable>
+    <>
+      <ScrollView style={{ padding: 10 }}>
+        <View style={styles.filterRow}>
+          {["all", "unread", "read"].map((type) => (
+            <TouchableOpacity
+              key={type}
+              onPress={() => setFilter(type as FilterType)}
+              style={[
+                styles.filterButton,
+                filter === type && styles.activeFilterButton,
+              ]}>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === type && styles.activeFilterButtonText,
+                ]}>
+                {type === "all"
+                  ? "Wszystkie"
+                  : type === "unread"
+                  ? "Nieprzeczytane"
+                  : "Przeczytane"}
+              </Text>
+            </TouchableOpacity>
           ))}
         </View>
-      ))}
+
+        {feeds.map((feed) => (
+          <View key={feed.id} style={styles.feedSection}>
+            <View style={styles.feedTitleRow}>
+              <Text style={styles.feedTitle}>{feed.name}</Text>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  setSelectedFeed(feed);
+                  setEditModalVisible(true);
+                }}>
+                <IconButton icon="pencil" size={20} />
+                <Text style={styles.editText}>Edytuj feed</Text>
+              </TouchableOpacity>
+            </View>
+
+            {filteredArticles[feed.id]?.map((item) => (
+              <Pressable
+                key={item.guid}
+                onPress={async () => {
+                  await toggleReadStatus(feed.id, item.guid);
+                  router.push({
+                    pathname: "../article",
+                    params: {
+                      title: item.title,
+                      pubDate: item.pubDate,
+                      content: item.content,
+                      link: item.link,
+                    },
+                  });
+                }}>
+                <Card
+                  style={[
+                    styles.card,
+                    item.read ? styles.readCard : styles.unreadCard,
+                  ]}>
+                  <Card.Content>
+                    <Title>{item.title}</Title>
+                    <Paragraph>
+                      {new Date(item.pubDate).toLocaleString()}
+                    </Paragraph>
+                  </Card.Content>
+                </Card>
+              </Pressable>
+            ))}
+          </View>
+        ))}
+      </ScrollView>
+
       <EditFeedModal
-        visible={isModalVisible}
+        visible={editModalVisible}
         feed={selectedFeed}
-        onClose={handleCloseModal}
+        onClose={() => setEditModalVisible(false)}
         onSave={handleSaveFeed}
       />
-    </ScrollView>
+    </>
   );
 }
 
@@ -164,28 +237,59 @@ const styles = StyleSheet.create({
   feedSection: {
     marginBottom: 24,
   },
-  feedHeader: {
+  feedTitleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 8,
   },
   feedTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 8,
     marginLeft: 4,
-  },
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  editText: {
-    fontSize: 16,
-    marginLeft: 8,
-    color: "#007BFF",
   },
   card: {
     marginVertical: 6,
     marginHorizontal: 4,
+  },
+  readCard: {
+    backgroundColor: "rgb(249, 249, 249)",
+  },
+  unreadCard: {
+    backgroundColor: "rgb(255, 250, 255)",
+  },
+  filterRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 16,
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  filterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: "#eee",
+    marginHorizontal: 4,
+  },
+  activeFilterButton: {
+    backgroundColor: "#7c3aed",
+  },
+  filterButtonText: {
+    color: "#333",
+    fontWeight: "600",
+  },
+  activeFilterButtonText: {
+    color: "#fff",
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingRight: 8,
+  },
+  editText: {
+    fontSize: 12,
+    color: "#555",
   },
 });

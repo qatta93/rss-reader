@@ -12,4 +12,5 @@ export type Article = {
   content: string;
   guid: string;
   feedId: string;
+  read: boolean;
 };
