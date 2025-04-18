@@ -78,7 +78,7 @@ export default function ManageFeeds() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Dodaj Nowy Feed</Text>
+      <Text style={styles.title}>Co dziś przeczytasz?</Text>
 
       <TextInput
         style={styles.input}
@@ -119,12 +119,15 @@ export default function ManageFeeds() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    maxWidth: 500,
+    width: "100%",
+    alignItems: "center",
+    marginTop: 50,
   },
   title: {
     fontWeight: "bold",
     fontSize: 20,
     marginVertical: 16,
+    textAlign: "center",
   },
   input: {
     borderWidth: 1,
@@ -132,11 +135,14 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     borderRadius: 8,
+    width: "100%",
+    maxWidth: 500,
   },
   errorText: {
     color: "red",
     marginBottom: 8,
     marginLeft: 4,
+    alignSelf: "flex-start",
   },
   successText: {
     color: "green",

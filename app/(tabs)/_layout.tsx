@@ -8,7 +8,6 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
   color: string;
@@ -55,9 +54,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="add-feed"
         options={{
-          title: "Dodaj artykuł",
+          title: "Dodaj Feed",
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons
               name="plus-box-outline"

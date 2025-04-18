@@ -108,6 +108,7 @@ export default function Favorites() {
 
   return (
     <ScrollView style={styles.container}>
+      <Text style={styles.title}>Twoje ulubione artykuły</Text>
       {favoriteArticles.length === 0 ? (
         <Text style={styles.noFavoritesText}>Brak ulubionych artykułów.</Text>
       ) : (
@@ -152,7 +153,17 @@ export default function Favorites() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
+    marginBottom: 24,
+    marginHorizontal: "auto",
+    maxWidth: 1200,
+    width: "100%",
+    marginTop: 70,
+  },
+  title: {
+    fontWeight: "bold",
+    fontSize: 20,
+    marginVertical: 16,
+    textAlign: "center",
   },
   noFavoritesText: {
     textAlign: "center",

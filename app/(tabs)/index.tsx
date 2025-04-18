@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ScrollView,
   Pressable,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  useWindowDimensions,
 } from "react-native";
 import {
   Card,
@@ -42,6 +43,8 @@ export default function Home() {
   const [favorites, setFavorites] = useState<Record<string, string[]>>({});
 
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
 
   const defaultFeeds: Feed[] = [
     {
@@ -132,7 +135,6 @@ export default function Home() {
     });
   };
 
-
   const toggleFavorite = async (feedId: string, articleId: string) => {
     setFavorites((prev) => {
       const alreadyFavorite = prev[feedId] || [];
@@ -176,7 +178,13 @@ export default function Home() {
     fetchFeedsAndArticles();
   };
 
-  if (loading) return <ActivityIndicator animating={true} />;
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator animating={true} size="large" />
+      </View>
+    );
+  }
 
   return (
     <>
@@ -204,6 +212,7 @@ export default function Home() {
             </TouchableOpacity>
           ))}
         </View>
+
         <TextInput
           style={styles.searchInput}
           placeholder="Wyszukaj po tytule..."
@@ -247,14 +256,22 @@ export default function Home() {
                       styles.card,
                       item.read ? styles.readCard : styles.unreadCard,
                     ]}>
-                    <Card.Content style={styles.cardContent}>
+                    <Card.Content
+                      style={[
+                        styles.cardContent,
+                        isMobile && styles.cardContentMobile,
+                      ]}>
                       <View>
                         <Title>{item.title}</Title>
                         <Paragraph>
                           {new Date(item.pubDate).toLocaleString()}
                         </Paragraph>
                       </View>
-                      <View style={styles.articleActions}>
+                      <View
+                        style={[
+                          styles.articleActions,
+                          isMobile && styles.articleActionsMobile,
+                        ]}>
                         <TouchableOpacity
                           onPress={() => toggleFavorite(feed.id, item.guid)}>
                           <IconButton
@@ -287,8 +304,17 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
+  },
   feedSection: {
     marginBottom: 24,
+    marginHorizontal: "auto",
+    maxWidth: 1200,
+    width: "100%",
   },
   feedTitleRow: {
     flexDirection: "row",
@@ -306,9 +332,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   cardContent: {
-    display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+  },
+  cardContentMobile: {
+    flexDirection: "column",
+    alignItems: "center",
   },
   readCard: {
     backgroundColor: "rgb(249, 249, 249)",
@@ -363,7 +392,10 @@ const styles = StyleSheet.create({
   },
   articleActions: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     marginTop: 8,
+  },
+  articleActionsMobile: {
+    justifyContent: "center",
   },
 });
