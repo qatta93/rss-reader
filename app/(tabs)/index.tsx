@@ -55,6 +55,16 @@ export default function Home() {
     },
   ];
 
+  const handleSaveFeed = async (updatedFeed: Feed) => {
+    const updatedFeeds = feeds.map((f) =>
+      f.id === updatedFeed.id ? updatedFeed : f
+    );
+
+    await AsyncStorage.setItem("feeds", JSON.stringify(updatedFeeds));
+    setFeeds(updatedFeeds);
+    fetchFeedsAndArticles();
+  };
+
   const fetchFeedsAndArticles = async () => {
     setLoading(true);
     try {
@@ -63,16 +73,18 @@ export default function Home() {
 
       let updatedLocalFeeds = [...localFeeds];
       defaultFeeds.forEach((defaultFeed) => {
-        const exists = localFeeds.find((f) => f.id === defaultFeed.id);
-        if (!exists) {
+        const existingFeedIndex = updatedLocalFeeds.findIndex(
+          (f) => f.id === defaultFeed.id
+        );
+        if (existingFeedIndex === -1) {
           updatedLocalFeeds.push(defaultFeed);
         }
+
       });
 
       await AsyncStorage.setItem("feeds", JSON.stringify(updatedLocalFeeds));
 
-      const allFeeds = updatedLocalFeeds;
-      const uniqueFeeds = allFeeds.filter(
+      const uniqueFeeds = updatedLocalFeeds.filter(
         (feed, index, self) => index === self.findIndex((f) => f.id === feed.id)
       );
       setFeeds(uniqueFeeds);
@@ -173,19 +185,6 @@ export default function Home() {
     return articles.filter((article) =>
       article.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  };
-
-  const handleSaveFeed = async (updatedFeed: Feed) => {
-    const updatedFeeds = feeds.map((f) =>
-      f.id === updatedFeed.id ? updatedFeed : f
-    );
-    const customFeeds = updatedFeeds.filter(
-      (f) => !defaultFeeds.find((df) => df.id === f.id)
-    );
-
-    await AsyncStorage.setItem("feeds", JSON.stringify(customFeeds));
-    setFeeds(updatedFeeds);
-    fetchFeedsAndArticles();
   };
 
   if (loading) {
