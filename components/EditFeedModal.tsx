@@ -7,7 +7,7 @@ import {
   Button,
   StyleSheet,
   TouchableWithoutFeedback,
-  Keyboard,
+  Pressable,
 } from "react-native";
 import { Feed } from "@/constants/types";
 
@@ -24,28 +24,26 @@ export default function EditFeedModal({
   onClose,
   onSave,
 }: Props) {
-  const [name, setName] = useState(feed?.name || "");
-  const [url, setUrl] = useState(feed?.url || "");
-  const inputRef = useRef<TextInput | null>(null);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const nameInputRef = useRef<TextInput | null>(null);
 
   useEffect(() => {
-    if (feed) {
+    if (feed && visible) {
       setName(feed.name);
       setUrl(feed.url);
-    }
-  }, [feed]);
 
-  useEffect(() => {
-    if (visible && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
     }
-  }, [visible]);
+  }, [feed, visible]);
 
   const handleSave = () => {
-    if (!name || !url) return;
+    if (!name || !url || !feed) return;
 
     const updatedFeed = {
-      ...feed!,
+      ...feed,
       name,
       url,
     };
@@ -54,26 +52,35 @@ export default function EditFeedModal({
     onClose();
   };
 
+  const handleModalPress = (e: any) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <Pressable style={styles.overlay} onPress={handleModalPress}>
+        <View style={styles.modalContainer}>
+          <TouchableWithoutFeedback>
             <View style={styles.modal}>
               <Text style={styles.title}>Edytuj Feed</Text>
 
               <TextInput
-                ref={inputRef}
+                ref={nameInputRef}
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
                 placeholder="Nazwa"
+                selectTextOnFocus
               />
+
               <TextInput
                 style={styles.input}
                 value={url}
                 onChangeText={setUrl}
                 placeholder="URL"
+                selectTextOnFocus
               />
 
               <View style={styles.buttons}>
@@ -83,7 +90,7 @@ export default function EditFeedModal({
             </View>
           </TouchableWithoutFeedback>
         </View>
-      </TouchableWithoutFeedback>
+      </Pressable>
     </Modal>
   );
 }
@@ -93,14 +100,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
+    alignItems: "center",
     padding: 16,
+  },
+  modalContainer: {
+    maxWidth: 600,
+    width: "100%",
   },
   modal: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
-    maxWidth: 600,
-    alignSelf: "center",
     width: "100%",
   },
   title: {
