@@ -60,13 +60,9 @@ A simple RSS reader app that allows users to subscribe to various feeds, browse 
    ```bash
    npx expo start -c
 
-4. **Access the app:**
-- The app is now running and you can start browsing RSS feeds, adding favorites, and more!
-
 ## Viewing in Browser:
-You can also view a demo of the app in your browser by visiting the following Vercel link:
-
-https://rss-reader-zeta-fawn.vercel.app/
+- press 'w' on your keyboard to open the app in Browser
+- The app is now running and you can start browsing RSS feeds, adding favorites, and more!
 
 ## Displaying on Mobile:
 To view the app on your mobile device, use Expo Go:
@@ -75,7 +71,7 @@ To view the app on your mobile device, use Expo Go:
 
 2. Open Expo Go on your device.
 
-3. Scan the QR code displayed in your terminal after running `npm start` or `npx expo start -c`.
+3. Scan the QR code displayed in your terminal after running `npx expo start -c`.
 
 This will load the app directly on your mobile device for easy testing and viewing.
 
