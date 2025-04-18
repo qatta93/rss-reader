@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { Card, Title, Paragraph, IconButton } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,11 +14,12 @@ import axios from "axios";
 import { Article, Feed } from "@/constants/types";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { ScreenContainer } from "react-native-screens";
 
 export default function Favorites() {
   const [favoriteArticles, setFavoriteArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
 
   const router = useRouter();
 
@@ -109,7 +111,14 @@ export default function Favorites() {
 
   return (
     <ScrollView style={styles.container}>
-      <ScreenContainer style={styles.wrapper}>
+      <View
+        style={{
+          paddingTop: isMobile ? 0 : 70,
+          marginBottom: 32,
+          maxWidth: 1200,
+          marginHorizontal: "auto",
+          width: "100%",
+        }}>
         <Text style={styles.title}>Twoje ulubione artykuły</Text>
         {favoriteArticles.length === 0 ? (
           <Text style={styles.noFavoritesText}>Brak ulubionych artykułów.</Text>
@@ -149,19 +158,13 @@ export default function Favorites() {
             </Pressable>
           ))
         )}
-      </ScreenContainer>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
-    paddingTop: 70,
-  },
-  wrapper: {
-    marginHorizontal: "auto",
-    maxWidth: 1200,
     width: "100%",
   },
   title: {

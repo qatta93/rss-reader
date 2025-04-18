@@ -23,7 +23,12 @@ export default function Article() {
         <RenderHtml contentWidth={width} source={{ html: content as string }} />
         <Button
           mode="contained"
-          style={{ marginTop: 16, width: 200 }}
+          style={{
+            marginTop: 16,
+            width: 200,
+            marginBottom: 50,
+            marginHorizontal: "auto",
+          }}
           onPress={() => Linking.openURL(link as string)}>
           Czytaj więcej
         </Button>
