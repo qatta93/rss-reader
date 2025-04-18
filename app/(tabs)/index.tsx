@@ -61,7 +61,17 @@ export default function Home() {
       const stored = await AsyncStorage.getItem("feeds");
       const localFeeds: Feed[] = stored ? JSON.parse(stored) : [];
 
-      const allFeeds = [...defaultFeeds, ...localFeeds];
+      let updatedLocalFeeds = [...localFeeds];
+      defaultFeeds.forEach((defaultFeed) => {
+        const exists = localFeeds.find((f) => f.id === defaultFeed.id);
+        if (!exists) {
+          updatedLocalFeeds.push(defaultFeed);
+        }
+      });
+
+      await AsyncStorage.setItem("feeds", JSON.stringify(updatedLocalFeeds));
+
+      const allFeeds = updatedLocalFeeds;
       const uniqueFeeds = allFeeds.filter(
         (feed, index, self) => index === self.findIndex((f) => f.id === feed.id)
       );

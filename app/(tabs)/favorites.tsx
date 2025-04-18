@@ -13,6 +13,7 @@ import axios from "axios";
 import { Article, Feed } from "@/constants/types";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
+import { ScreenContainer } from "react-native-screens";
 
 export default function Favorites() {
   const [favoriteArticles, setFavoriteArticles] = useState<Article[]>([]);
@@ -108,56 +109,60 @@ export default function Favorites() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Twoje ulubione artykuły</Text>
-      {favoriteArticles.length === 0 ? (
-        <Text style={styles.noFavoritesText}>Brak ulubionych artykułów.</Text>
-      ) : (
-        favoriteArticles.map((article) => (
-          <Pressable
-            key={article.guid}
-            onPress={() => {
-              router.push({
-                pathname: "../article",
-                params: {
-                  title: article.title,
-                  pubDate: article.pubDate,
-                  content: article.content,
-                  link: article.link,
-                },
-              });
-            }}>
-            <Card style={styles.card}>
-              <Card.Content>
-                <View style={styles.cardContent}>
-                  <View style={styles.cardText}>
-                    <Title>{article.title}</Title>
-                    <Paragraph>
-                      {new Date(article.pubDate).toLocaleString()}
-                    </Paragraph>
+      <ScreenContainer style={styles.wrapper}>
+        <Text style={styles.title}>Twoje ulubione artykuły</Text>
+        {favoriteArticles.length === 0 ? (
+          <Text style={styles.noFavoritesText}>Brak ulubionych artykułów.</Text>
+        ) : (
+          favoriteArticles.map((article) => (
+            <Pressable
+              key={article.guid}
+              onPress={() => {
+                router.push({
+                  pathname: "../article",
+                  params: {
+                    title: article.title,
+                    pubDate: article.pubDate,
+                    content: article.content,
+                    link: article.link,
+                  },
+                });
+              }}>
+              <Card style={styles.card}>
+                <Card.Content>
+                  <View style={styles.cardContent}>
+                    <View style={styles.cardText}>
+                      <Title>{article.title}</Title>
+                      <Paragraph>
+                        {new Date(article.pubDate).toLocaleString()}
+                      </Paragraph>
+                    </View>
+                    <IconButton
+                      icon="heart"
+                      onPress={() =>
+                        removeFromFavorites(article.feedId!, article.guid)
+                      }
+                    />
                   </View>
-                  <IconButton
-                    icon="heart"
-                    onPress={() =>
-                      removeFromFavorites(article.feedId!, article.guid)
-                    }
-                  />
-                </View>
-              </Card.Content>
-            </Card>
-          </Pressable>
-        ))
-      )}
+                </Card.Content>
+              </Card>
+            </Pressable>
+          ))
+        )}
+      </ScreenContainer>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    width: "100%",
+    paddingTop: 70,
+  },
+  wrapper: {
     marginHorizontal: "auto",
     maxWidth: 1200,
     width: "100%",
-    marginTop: 70,
   },
   title: {
     fontWeight: "bold",
