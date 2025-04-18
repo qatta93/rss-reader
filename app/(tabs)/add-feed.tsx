@@ -9,12 +9,12 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feed } from "@/constants/types";
+import { v4 as uuidv4 } from "uuid";
 
 export default function ManageFeeds() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const [editingFeedId, setEditingFeedId] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ name?: string; url?: string }>({});
 
@@ -55,20 +55,14 @@ export default function ManageFeeds() {
     if (Object.keys(newErrors).length > 0) return;
 
     const newFeed: Feed = {
-      id: editingFeedId || crypto.randomUUID(),
+      id: uuidv4(),
       name,
       url,
       createdAt: new Date().toISOString(),
     };
 
-    let updatedFeeds;
-    if (editingFeedId) {
-      updatedFeeds = feeds.map((f) => (f.id === editingFeedId ? newFeed : f));
-      setEditingFeedId(null);
-    } else {
-      updatedFeeds = [...feeds, newFeed];
-      setFeedbackMessage("Feed został pomyślnie dodany!");
-    }
+    const updatedFeeds = [...feeds, newFeed];
+    setFeedbackMessage("Feed został pomyślnie dodany!");
 
     await saveFeedsToStorage(updatedFeeds);
     setName("");
@@ -80,34 +74,35 @@ export default function ManageFeeds() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Co dziś przeczytasz?</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nazwa feedu"
-        value={name}
-        onChangeText={(text) => {
-          setName(text);
-          if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
-          if (feedbackMessage) setFeedbackMessage(null);
-        }}
-      />
-      {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+      <View style={styles.inputGroup}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nazwa feedu"
+          value={name}
+          onChangeText={(text) => {
+            setName(text);
+            if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+            if (feedbackMessage) setFeedbackMessage(null);
+          }}
+        />
+        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="URL RSS feedu"
-        value={url}
-        onChangeText={(text) => {
-          setUrl(text);
-          if (errors.url) setErrors((e) => ({ ...e, url: undefined }));
-          if (feedbackMessage) setFeedbackMessage(null);
-        }}
-      />
-      {errors.url && <Text style={styles.errorText}>{errors.url}</Text>}
+      <View style={styles.inputGroup}>
+        <TextInput
+          style={styles.input}
+          placeholder="URL RSS feedu"
+          value={url}
+          onChangeText={(text) => {
+            setUrl(text);
+            if (errors.url) setErrors((e) => ({ ...e, url: undefined }));
+            if (feedbackMessage) setFeedbackMessage(null);
+          }}
+        />
+        {errors.url && <Text style={styles.errorText}>{errors.url}</Text>}
+      </View>
 
-      <Button
-        title={editingFeedId ? "Zapisz zmiany" : "Dodaj feed"}
-        onPress={handleAddOrUpdate}
-      />
+      <Button title="Dodaj feed" onPress={handleAddOrUpdate} />
 
       {feedbackMessage && (
         <Text style={styles.successText}>{feedbackMessage}</Text>
@@ -129,6 +124,11 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     textAlign: "center",
   },
+  inputGroup: {
+    width: "100%",
+    maxWidth: 500,
+    marginBottom: 12,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -136,13 +136,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 8,
     width: "100%",
-    maxWidth: 500,
   },
   errorText: {
     color: "red",
-    marginBottom: 8,
-    marginLeft: 4,
-    alignSelf: "flex-start",
+    marginTop: 4,
+    fontSize: 14,
   },
   successText: {
     color: "green",
