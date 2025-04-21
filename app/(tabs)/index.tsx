@@ -59,12 +59,19 @@ export default function Home() {
         <FilterBar activeFilter={filter} onFilterChange={setFilter} />
         <SearchInput value={searchQuery} onChangeText={setSearchQuery} />
 
-        {feeds.map((feed) => (
-          <View key={feed.id} style={styles.feedSection}>
-            <FeedHeader title={feed.name} onEdit={() => openEditModal(feed)} />
+        {feeds.map((feed) => {
+          const articles = searchFilteredArticles(
+            filteredArticles[feed.id] || []
+          );
+          if (!articles.length) return null;
 
-            {searchFilteredArticles(filteredArticles[feed.id] || []).map(
-              (article) => (
+          return (
+            <View key={feed.id} style={styles.feedSection}>
+              <FeedHeader
+                title={feed.name}
+                onEdit={() => openEditModal(feed)}
+              />
+              {articles.map((article) => (
                 <ArticleCard
                   key={article.guid}
                   article={article}
@@ -88,10 +95,10 @@ export default function Home() {
                   }}
                   onToggleFavorite={() => toggleFavorite(feed.id, article.guid)}
                 />
-              )
-            )}
-          </View>
-        ))}
+              ))}
+            </View>
+          );
+        })}
       </ScrollView>
 
       <EditFeedModal
