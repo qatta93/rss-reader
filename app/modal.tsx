@@ -1,6 +1,8 @@
 import { StatusBar } from "expo-status-bar";
-import { Platform, StyleSheet } from "react-native";
-import { Text, View } from "@/components/Themed";
+import { StyleSheet } from "react-native";
+import { Text } from "@/components/Themed";
+import { View } from "react-native";
+import { Colors } from "@/constants/Colors";
 
 export default function ModalScreen() {
   return (
@@ -10,16 +12,14 @@ export default function ModalScreen() {
         Twoje centrum wiadomości bez chaosu, reklam i scrollowania bez końca.
       </Text>
       <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
+        style={[styles.separator, { backgroundColor: Colors.background }]}
       />
       <Text style={styles.description}>
         Dodawaj źródła RSS i przeglądaj artykuły z wielu miejsc w jednym,
         eleganckim miejscu. To szybki i prosty sposób na bycie na bieżąco — po
         Twojemu.
       </Text>
-      <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
+      <StatusBar />
     </View>
   );
 }
