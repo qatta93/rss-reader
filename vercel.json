@@ -1,0 +1,11 @@
+{
+  "buildCommand": "expo export -p web",
+  "outputDirectory": "dist",
+  "devCommand": "expo start --web",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/favorites", "destination": "/app/tabs/favorites" },
+    { "source": "/add-feed", "destination": "/app/tabs/add-feed" }
+  ],
+  "cleanUrls": true
+}
