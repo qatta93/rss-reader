@@ -60,9 +60,13 @@ A simple RSS reader app that allows users to subscribe to various feeds, browse 
    ```bash
    npx expo start -c
 
-## Viewing in Browser:
-- press 'w' on your keyboard to open the app in Browser
+4. **Access the app:**
 - The app is now running and you can start browsing RSS feeds, adding favorites, and more!
+
+## Viewing in Browser:
+You can also view a demo of the app in your browser by visiting the following Vercel link:
+
+https://rss-reader-omega-navy.vercel.app/
 
 ## Displaying on Mobile:
 To view the app on your mobile device, use Expo Go:
