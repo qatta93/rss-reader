@@ -6,6 +6,7 @@ import {
   Button,
   StyleSheet,
   View,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feed } from "@/constants/types";
@@ -18,6 +19,7 @@ export default function ManageFeeds() {
   const [url, setUrl] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ name?: string; url?: string }>({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadFeeds();
@@ -45,6 +47,16 @@ export default function ManageFeeds() {
     return regex.test(url);
   };
 
+  const validateRssUrl = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const text = await response.text();
+      return text.includes("<rss") || text.includes("<feed"); // RSS 2.0 or Atom
+    } catch (error) {
+      return false;
+    }
+  };
+
   const handleAddOrUpdate = async () => {
     const newErrors: typeof errors = {};
     if (!name) newErrors.name = "Pole obowiązkowe";
@@ -54,6 +66,16 @@ export default function ManageFeeds() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) return;
+
+    setLoading(true);
+
+    const isValidRss = await validateRssUrl(url);
+    setLoading(false);
+
+    if (!isValidRss) {
+      setErrors({ ...newErrors, url: "Nieprawidłowy lub niedostępny RSS" });
+      return;
+    }
 
     const newFeed: Feed = {
       id: uuidv4(),
@@ -103,7 +125,15 @@ export default function ManageFeeds() {
         {errors.url && <Text style={styles.errorText}>{errors.url}</Text>}
       </View>
 
-      <Button title="Dodaj feed" onPress={handleAddOrUpdate} />
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color={Colors.buttonActive}
+          style={{ marginTop: 10 }}
+        />
+      ) : (
+        <Button title="Dodaj feed" onPress={handleAddOrUpdate} />
+      )}
 
       {feedbackMessage && (
         <Text style={styles.successText}>{feedbackMessage}</Text>
@@ -120,7 +150,6 @@ const styles = StyleSheet.create({
     padding: 16,
     width: "100%",
   },
-
   title: {
     fontWeight: "bold",
     fontSize: 20,

@@ -12,6 +12,7 @@ import {
   Platform,
   Animated,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Feed } from "@/constants/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,7 +35,10 @@ export default function EditFeedModal({
 }: Props) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [errorName, setErrorName] = useState("");
+  const [errorUrl, setErrorUrl] = useState("");
   const [confirmVisible, setConfirmVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
   const nameInputRef = useRef<TextInput | null>(null);
 
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -63,6 +67,8 @@ export default function EditFeedModal({
     if (feed && visible) {
       setName(feed.name);
       setUrl(feed.url);
+      setErrorName("");
+      setErrorUrl("");
 
       setTimeout(() => {
         nameInputRef.current?.focus();
@@ -70,13 +76,52 @@ export default function EditFeedModal({
     }
   }, [feed, visible]);
 
-  const handleSave = () => {
-    if (!name || !url || !feed) return;
+  const validateRssUrl = async (url: string): Promise<boolean> => {
+    try {
+      const response = await fetch(url);
+      const text = await response.text();
+      return text.includes("<rss") || text.includes("<feed");
+    } catch (error) {
+      console.error("Błąd podczas sprawdzania RSS:", error);
+      return false;
+    }
+  };
+
+  const handleSave = async () => {
+    let hasError = false;
+
+    if (!name.trim()) {
+      setErrorName("Nazwa jest wymagana");
+      hasError = true;
+    } else {
+      setErrorName("");
+    }
+
+    if (!url.trim()) {
+      setErrorUrl("URL jest wymagany");
+      hasError = true;
+    } else if (!/^https?:\/\/.+\..+/.test(url)) {
+      setErrorUrl("Nieprawidłowy format URL");
+      hasError = true;
+    } else {
+      setErrorUrl("");
+    }
+
+    if (hasError || !feed) return;
+
+    setLoading(true);
+    const isValidRss = await validateRssUrl(url.trim());
+    setLoading(false);
+
+    if (!isValidRss) {
+      setErrorUrl("Ten link nie wygląda na prawidłowy kanał RSS");
+      return;
+    }
 
     const updatedFeed = {
       ...feed,
-      name,
-      url,
+      name: name.trim(),
+      url: url.trim(),
     };
 
     onSave(updatedFeed);
@@ -136,23 +181,38 @@ export default function EditFeedModal({
 
                 <TextInput
                   ref={nameInputRef}
-                  style={styles.input}
+                  style={[styles.input, errorName ? styles.inputError : null]}
                   value={name}
                   onChangeText={setName}
                   placeholder="Nazwa"
                   selectTextOnFocus
                 />
+                {errorName ? (
+                  <Text style={styles.errorText}>{errorName}</Text>
+                ) : null}
 
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, errorUrl ? styles.inputError : null]}
                   value={url}
                   onChangeText={setUrl}
                   placeholder="URL"
                   selectTextOnFocus
+                  autoCapitalize="none"
                 />
+                {errorUrl ? (
+                  <Text style={styles.errorText}>{errorUrl}</Text>
+                ) : null}
 
                 <View style={styles.buttons}>
-                  <Button title="Zapisz" onPress={handleSave} />
+                  {loading ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={Colors.buttonActive}
+                      style={{ marginRight: 10 }}
+                    />
+                  ) : (
+                    <Button title="Zapisz" onPress={handleSave} />
+                  )}
                   <Button
                     title="Usuń Feed"
                     onPress={handleDelete}
@@ -239,6 +299,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
+  },
+  inputError: {
+    borderColor: Colors.alert,
+  },
+  errorText: {
+    color: Colors.alert,
+    fontSize: 13,
+    marginBottom: 8,
   },
   buttons: {
     flexDirection: "row",
