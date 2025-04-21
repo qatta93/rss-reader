@@ -1,19 +1,20 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
-
-export default {
-  light: {
-    text: '#000',
-    background: '#fff',
-    tint: tintColorLight,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#fff',
-    background: '#000',
-    tint: tintColorDark,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorDark,
-  },
+export const Colors = {
+  background: "#ffffff",
+  text: "#1a1a1a",
+  secondaryText: "#555555",
+  mutedText: "#888888",
+  black: "#000000",
+  alert: "#da1c1c",
+  cardReadBackground: "#f4f4f4",
+  cardUnreadBackground: "rgb(255, 250, 255)",
+  buttonInactive: "#e0e0e0",
+  buttonActive: "rgba(33, 150, 243, 1.0)",
+  buttonText: "#333333",
+  buttonActiveText: "#ffffff",
+  border: "#cccccc",
+  tint: "#7C3AED",
+  inputBorder: "#ccc",
+  inputText: "#333",
+  inputPlaceholder: "#888",
+  successText: "#4CAF50",
 };

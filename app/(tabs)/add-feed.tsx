@@ -10,6 +10,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feed } from "@/constants/types";
 import { v4 as uuidv4 } from "uuid";
+import { Colors } from "@/constants/Colors";
 
 export default function ManageFeeds() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
@@ -113,16 +114,19 @@ export default function ManageFeeds() {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 16,
     width: "100%",
-    alignItems: "center",
-    marginTop: 50,
   },
+
   title: {
     fontWeight: "bold",
     fontSize: 20,
     marginVertical: 16,
     textAlign: "center",
+    color: Colors.text,
   },
   inputGroup: {
     width: "100%",
@@ -131,19 +135,20 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: Colors.inputBorder,
     padding: 12,
     marginBottom: 8,
     borderRadius: 8,
     width: "100%",
+    color: Colors.inputText,
   },
   errorText: {
-    color: "red",
+    color: Colors.alert,
     marginTop: 4,
     fontSize: 14,
   },
   successText: {
-    color: "green",
+    color: Colors.successText,
     fontSize: 16,
     textAlign: "center",
     marginTop: 16,

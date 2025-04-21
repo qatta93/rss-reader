@@ -14,6 +14,7 @@ import axios from "axios";
 import { Article, Feed } from "@/constants/types";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
+import { Colors } from "@/constants/Colors"; // Dodajemy import kolorów
 
 export default function Favorites() {
   const [favoriteArticles, setFavoriteArticles] = useState<Article[]>([]);
@@ -69,6 +70,10 @@ export default function Favorites() {
             console.error(`Błąd ładowania feedu ${feed.name}:`, error);
           }
         })
+      );
+
+      matchedArticles.sort(
+        (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
       );
 
       setFavoriteArticles(matchedArticles);
@@ -173,16 +178,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginVertical: 16,
     textAlign: "center",
+    color: Colors.text,
   },
   noFavoritesText: {
     textAlign: "center",
     marginTop: 30,
     fontSize: 16,
+    color: Colors.mutedText,
   },
   card: {
     marginVertical: 6,
     marginHorizontal: 4,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background,
   },
   cardContent: {
     flexDirection: "row",

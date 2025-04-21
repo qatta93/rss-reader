@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { Feed } from "@/constants/types";
 import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "@/constants/Colors";
 
 type Props = {
   visible: boolean;
@@ -129,7 +130,7 @@ export default function EditFeedModal({
                 <View style={styles.header}>
                   <Text style={styles.title}>Edytuj Feed</Text>
                   <TouchableOpacity onPress={onClose}>
-                    <Ionicons name="close" size={24} color="#333" />
+                    <Ionicons name="close" size={24} color={Colors.text} />
                   </TouchableOpacity>
                 </View>
 
@@ -155,7 +156,7 @@ export default function EditFeedModal({
                   <Button
                     title="Usuń Feed"
                     onPress={handleDelete}
-                    color="red"
+                    color={Colors.alert}
                   />
                 </View>
               </View>
@@ -181,7 +182,7 @@ export default function EditFeedModal({
                 />
                 <Button
                   title="Usuń"
-                  color="red"
+                  color={Colors.alert}
                   onPress={() => {
                     if (feed) {
                       onDelete(feed.id);
@@ -212,11 +213,11 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   modal: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 20,
     width: "100%",
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 4,
@@ -230,10 +231,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "bold",
+    color: Colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   confirmContainer: {
-    backgroundColor: "white",
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 30,
     alignItems: "center",
@@ -255,10 +257,12 @@ const styles = StyleSheet.create({
   confirmTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    color: Colors.text,
     marginBottom: 8,
   },
   confirmText: {
     fontSize: 16,
+    color: Colors.text,
     marginBottom: 16,
     textAlign: "center",
   },

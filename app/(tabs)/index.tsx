@@ -9,19 +9,14 @@ import {
   TextInput,
   useWindowDimensions,
 } from "react-native";
-import {
-  Card,
-  Title,
-  Paragraph,
-  ActivityIndicator,
-  IconButton,
-} from "react-native-paper";
+import { Card, Title, Paragraph, IconButton } from "react-native-paper";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { Article, Feed } from "@/constants/types";
 import EditFeedModal from "@/components/EditFeedModal";
+import { Colors } from "@/constants/Colors";
 
 type FilterType = "all" | "read" | "unread";
 
@@ -79,7 +74,6 @@ export default function Home() {
         if (existingFeedIndex === -1) {
           updatedLocalFeeds.push(defaultFeed);
         }
-
       });
 
       await AsyncStorage.setItem("feeds", JSON.stringify(updatedLocalFeeds));
@@ -190,7 +184,7 @@ export default function Home() {
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator animating={true} size="large" />
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
@@ -214,7 +208,6 @@ export default function Home() {
     await AsyncStorage.setItem("favorites", JSON.stringify(updatedFav));
     setFavorites(updatedFav);
   };
-
 
   return (
     <>
@@ -285,15 +278,17 @@ export default function Home() {
                   <Card
                     style={[
                       styles.card,
-                      item.read ? styles.readCard : styles.unreadCard,
+                      item.read
+                        ? { backgroundColor: Colors.cardReadBackground }
+                        : { backgroundColor: Colors.cardUnreadBackground },
                     ]}>
                     <Card.Content
                       style={[
                         styles.cardContent,
                         isMobile && styles.cardContentMobile,
                       ]}>
-                      <View>
-                        <Title>{item.title}</Title>
+                      <View style={{ flex: 1 }}>
+                        <Title style={styles.cardTitle}>{item.title}</Title>
                         <Paragraph>
                           {new Date(item.pubDate).toLocaleString()}
                         </Paragraph>
@@ -342,6 +337,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: "100%",
   },
+  loadingText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.buttonActive,
+  },
   feedSection: {
     marginBottom: 24,
     marginHorizontal: "auto",
@@ -358,6 +358,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginLeft: 4,
+    color: Colors.text,
   },
   card: {
     marginVertical: 6,
@@ -366,16 +367,19 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
   },
   cardContentMobile: {
     flexDirection: "column",
     alignItems: "center",
   },
-  readCard: {
-    backgroundColor: "rgb(249, 249, 249)",
-  },
-  unreadCard: {
-    backgroundColor: "rgb(255, 250, 255)",
+  cardTitle: {
+    flexShrink: 1,
+    flexWrap: "wrap",
+    overflow: "hidden",
+    color: Colors.text,
   },
   filterRow: {
     flexDirection: "row",
@@ -388,18 +392,18 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: "#eee",
+    backgroundColor: Colors.buttonInactive,
     marginHorizontal: 4,
   },
   activeFilterButton: {
-    backgroundColor: "#7c3aed",
+    backgroundColor: Colors.buttonActive,
   },
   filterButtonText: {
-    color: "#333",
+    color: Colors.buttonText,
     fontWeight: "600",
   },
   activeFilterButtonText: {
-    color: "#fff",
+    color: Colors.buttonActiveText,
   },
   editButton: {
     flexDirection: "row",
@@ -409,11 +413,11 @@ const styles = StyleSheet.create({
   },
   editText: {
     fontSize: 12,
-    color: "#555",
+    color: Colors.secondaryText,
   },
   searchInput: {
     height: 40,
-    borderColor: "#ccc",
+    borderColor: Colors.border,
     borderWidth: 1,
     borderRadius: 8,
     marginBottom: 16,
@@ -421,6 +425,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: 300,
     alignSelf: "center",
+    color: Colors.text,
   },
   articleActions: {
     flexDirection: "row",
@@ -429,5 +434,7 @@ const styles = StyleSheet.create({
   },
   articleActionsMobile: {
     justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
   },
 });
