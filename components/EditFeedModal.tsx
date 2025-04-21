@@ -10,10 +10,15 @@ import {
   Pressable,
   TouchableOpacity,
   Platform,
-  Animated,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from "react-native-reanimated";
 import { Feed } from "@/constants/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
@@ -28,34 +33,27 @@ type Props = {
 };
 
 function useModalAnimation(visible: boolean) {
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(0.8);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      opacity.value = withTiming(1, { duration: 200 });
+      scale.value = withSpring(1);
     } else {
-      opacityAnim.setValue(0);
-      scaleAnim.setValue(0.8);
+      opacity.value = 0;
+      scale.value = 0.8;
     }
   }, [visible]);
 
-  return {
-    animationStyle: {
-      opacity: opacityAnim,
-      transform: [{ scale: scaleAnim }],
-    },
-  };
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  return { animatedStyle };
 }
 
 export default function EditFeedModal({
@@ -79,7 +77,7 @@ export default function EditFeedModal({
   const [loading, setLoading] = useState(false);
   const nameInputRef = useRef<TextInput | null>(null);
 
-  const { animationStyle } = useModalAnimation(visible);
+  const { animatedStyle } = useModalAnimation(visible);
 
   useEffect(() => {
     if (feed && visible) {
@@ -148,7 +146,7 @@ export default function EditFeedModal({
     <>
       <Modal visible={visible} animationType="none" transparent>
         <Pressable style={styles.overlay} onPress={handleModalPress}>
-          <Animated.View style={[styles.modalContainer, animationStyle]}>
+          <Animated.View style={[styles.modalContainer, animatedStyle]}>
             <TouchableWithoutFeedback>
               <View style={styles.modal}>
                 <View style={styles.header}>

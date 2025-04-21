@@ -1,33 +1,31 @@
-import { useRef, useEffect } from "react";
-import { Animated } from "react-native";
+import { useEffect } from "react";
+import {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from "react-native-reanimated";
 
 export function useModalAnimation(visible: boolean) {
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(0.8);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      opacity.value = withTiming(1, { duration: 200 });
+      scale.value = withSpring(1);
     } else {
-      opacityAnim.setValue(0);
-      scaleAnim.setValue(0.8);
+      opacity.value = 0;
+      scale.value = 0.8;
     }
   }, [visible]);
 
-  return {
-    animationStyle: {
-      opacity: opacityAnim,
-      transform: [{ scale: scaleAnim }],
-    },
-  };
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  return { animatedStyle };
 }
