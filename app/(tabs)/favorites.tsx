@@ -1,88 +1,25 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   ScrollView,
   Text,
   View,
   StyleSheet,
-  Pressable,
-  ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
-import { Card, Title, Paragraph, IconButton } from "react-native-paper";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import { Article, Feed } from "@/constants/types";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { Colors } from "@/constants/Colors"; // Dodajemy import kolorów
+import { useFavoritesManager } from "@/hooks/useFavoritesManager";
+import { EmptyFavorites } from "@/components/EmptyFavorites";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { Colors } from "@/constants/Colors";
+import { ArticleCard } from "@/components/ArticleCard";
 
 export default function Favorites() {
-  const [favoriteArticles, setFavoriteArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { favoriteArticles, loading, fetchFavorites, removeFromFavorites } =
+    useFavoritesManager();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-
   const router = useRouter();
-
-  const fetchFavorites = async () => {
-    setLoading(true);
-    try {
-      const feedsFromStorage = await AsyncStorage.getItem("feeds");
-      const localFeeds: Feed[] = feedsFromStorage
-        ? JSON.parse(feedsFromStorage)
-        : [];
-
-      const storedFavorites = await AsyncStorage.getItem("favorites");
-      const favoriteGuids: Record<string, string[]> = storedFavorites
-        ? JSON.parse(storedFavorites)
-        : {};
-
-      const matchedArticles: Article[] = [];
-
-      await Promise.all(
-        localFeeds.map(async (feed) => {
-          try {
-            const res = await axios.get(
-              "https://api.rss2json.com/v1/api.json",
-              {
-                params: { rss_url: feed.url },
-              }
-            );
-
-            const items: Article[] = res.data.items.map((item: any) => ({
-              title: item.title || "",
-              pubDate: item.pubDate,
-              link: item.link,
-              content: item.content || item.description,
-              guid: item.guid,
-              feedId: feed.id,
-              read: false,
-            }));
-
-            const guids = favoriteGuids[feed.id] || [];
-
-            const favoritesFromThisFeed = items.filter((a) =>
-              guids.includes(a.guid)
-            );
-
-            matchedArticles.push(...favoritesFromThisFeed);
-          } catch (error) {
-            console.error(`Błąd ładowania feedu ${feed.name}:`, error);
-          }
-        })
-      );
-
-      matchedArticles.sort(
-        (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-      );
-
-      setFavoriteArticles(matchedArticles);
-    } catch (error) {
-      console.error("Błąd ładowania ulubionych:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useFocusEffect(
     useCallback(() => {
@@ -90,29 +27,7 @@ export default function Favorites() {
     }, [])
   );
 
-  const removeFromFavorites = async (feedId: string, articleGuid: string) => {
-    try {
-      const stored = await AsyncStorage.getItem("favorites");
-      const favorites = stored ? JSON.parse(stored) : {};
-
-      const updated = {
-        ...favorites,
-        [feedId]: (favorites[feedId] || []).filter(
-          (guid: string) => guid !== articleGuid
-        ),
-      };
-
-      await AsyncStorage.setItem("favorites", JSON.stringify(updated));
-
-      setFavoriteArticles((prev) =>
-        prev.filter((a) => !(a.guid === articleGuid && a.feedId === feedId))
-      );
-    } catch (e) {
-      console.error("Błąd usuwania z ulubionych:", e);
-    }
-  };
-
-  if (loading) return <ActivityIndicator animating />;
+  if (loading) return <LoadingIndicator />;
 
   return (
     <ScrollView style={styles.container}>
@@ -125,12 +40,15 @@ export default function Favorites() {
           width: "100%",
         }}>
         <Text style={styles.title}>Twoje ulubione artykuły</Text>
+
         {favoriteArticles.length === 0 ? (
-          <Text style={styles.noFavoritesText}>Brak ulubionych artykułów.</Text>
+          <EmptyFavorites />
         ) : (
           favoriteArticles.map((article) => (
-            <Pressable
+            <ArticleCard
               key={article.guid}
+              article={article}
+              variant="favorite"
               onPress={() => {
                 router.push({
                   pathname: "../article",
@@ -142,26 +60,11 @@ export default function Favorites() {
                     from: "favorites",
                   },
                 });
-              }}>
-              <Card style={styles.card}>
-                <Card.Content>
-                  <View style={styles.cardContent}>
-                    <View style={styles.cardText}>
-                      <Title>{article.title}</Title>
-                      <Paragraph>
-                        {new Date(article.pubDate).toLocaleString()}
-                      </Paragraph>
-                    </View>
-                    <IconButton
-                      icon="heart"
-                      onPress={() =>
-                        removeFromFavorites(article.feedId!, article.guid)
-                      }
-                    />
-                  </View>
-                </Card.Content>
-              </Card>
-            </Pressable>
+              }}
+              onToggleFavorite={() =>
+                removeFromFavorites(article.feedId!, article.guid)
+              }
+            />
           ))
         )}
       </View>
@@ -179,25 +82,5 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     textAlign: "center",
     color: Colors.text,
-  },
-  noFavoritesText: {
-    textAlign: "center",
-    marginTop: 30,
-    fontSize: 16,
-    color: Colors.mutedText,
-  },
-  card: {
-    marginVertical: 6,
-    marginHorizontal: 4,
-    backgroundColor: Colors.background,
-  },
-  cardContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  cardText: {
-    flex: 1,
-    paddingRight: 8,
   },
 });

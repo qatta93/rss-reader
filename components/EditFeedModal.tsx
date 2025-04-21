@@ -17,6 +17,7 @@ import {
 import { Feed } from "@/constants/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
+import { useFormValidation, VALIDATION } from "../hooks/useFormValidation";
 
 type Props = {
   visible: boolean;
@@ -26,21 +27,7 @@ type Props = {
   onDelete: (feedId: string) => void;
 };
 
-export default function EditFeedModal({
-  visible,
-  feed,
-  onClose,
-  onSave,
-  onDelete,
-}: Props) {
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const [errorName, setErrorName] = useState("");
-  const [errorUrl, setErrorUrl] = useState("");
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const nameInputRef = useRef<TextInput | null>(null);
-
+function useModalAnimation(visible: boolean) {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -63,12 +50,41 @@ export default function EditFeedModal({
     }
   }, [visible]);
 
+  return {
+    animationStyle: {
+      opacity: opacityAnim,
+      transform: [{ scale: scaleAnim }],
+    },
+  };
+}
+
+export default function EditFeedModal({
+  visible,
+  feed,
+  onClose,
+  onSave,
+  onDelete,
+}: Props) {
+  const {
+    formData,
+    errors,
+    validateForm,
+    validateRssUrl,
+    handleInputChange,
+    resetForm,
+    setErrors,
+  } = useFormValidation();
+
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const nameInputRef = useRef<TextInput | null>(null);
+
+  const { animationStyle } = useModalAnimation(visible);
+
   useEffect(() => {
     if (feed && visible) {
-      setName(feed.name);
-      setUrl(feed.url);
-      setErrorName("");
-      setErrorUrl("");
+      handleInputChange("name", feed.name);
+      handleInputChange("url", feed.url);
 
       setTimeout(() => {
         nameInputRef.current?.focus();
@@ -76,52 +92,22 @@ export default function EditFeedModal({
     }
   }, [feed, visible]);
 
-  const validateRssUrl = async (url: string): Promise<boolean> => {
-    try {
-      const response = await fetch(url);
-      const text = await response.text();
-      return text.includes("<rss") || text.includes("<feed");
-    } catch (error) {
-      console.error("Błąd podczas sprawdzania RSS:", error);
-      return false;
-    }
-  };
-
   const handleSave = async () => {
-    let hasError = false;
-
-    if (!name.trim()) {
-      setErrorName("Nazwa jest wymagana");
-      hasError = true;
-    } else {
-      setErrorName("");
-    }
-
-    if (!url.trim()) {
-      setErrorUrl("URL jest wymagany");
-      hasError = true;
-    } else if (!/^https?:\/\/.+\..+/.test(url)) {
-      setErrorUrl("Nieprawidłowy format URL");
-      hasError = true;
-    } else {
-      setErrorUrl("");
-    }
-
-    if (hasError || !feed) return;
+    if (!validateForm() || !feed) return;
 
     setLoading(true);
-    const isValidRss = await validateRssUrl(url.trim());
+    const isValidRss = await validateRssUrl(formData.url);
     setLoading(false);
 
     if (!isValidRss) {
-      setErrorUrl("Ten link nie wygląda na prawidłowy kanał RSS");
+      setErrors((prev) => ({ ...prev, url: VALIDATION.INVALID_RSS }));
       return;
     }
 
     const updatedFeed = {
       ...feed,
-      name: name.trim(),
-      url: url.trim(),
+      name: formData.name.trim(),
+      url: formData.url.trim(),
     };
 
     onSave(updatedFeed);
@@ -135,22 +121,22 @@ export default function EditFeedModal({
   };
 
   const handleDelete = () => {
+    if (!feed) return;
+
     if (Platform.OS === "web") {
       setConfirmVisible(true);
     } else {
       Alert.alert(
         "Potwierdzenie",
-        `Czy na pewno chcesz usunąć feed "${feed?.name}"?`,
+        `Czy na pewno chcesz usunąć feed "${feed.name}"?`,
         [
           { text: "Anuluj", style: "cancel" },
           {
             text: "Usuń",
             style: "destructive",
             onPress: () => {
-              if (feed) {
-                onDelete(feed.id);
-                onClose();
-              }
+              onDelete(feed.id);
+              onClose();
             },
           },
         ]
@@ -162,14 +148,7 @@ export default function EditFeedModal({
     <>
       <Modal visible={visible} animationType="none" transparent>
         <Pressable style={styles.overlay} onPress={handleModalPress}>
-          <Animated.View
-            style={[
-              styles.modalContainer,
-              {
-                opacity: opacityAnim,
-                transform: [{ scale: scaleAnim }],
-              },
-            ]}>
+          <Animated.View style={[styles.modalContainer, animationStyle]}>
             <TouchableWithoutFeedback>
               <View style={styles.modal}>
                 <View style={styles.header}>
@@ -181,26 +160,26 @@ export default function EditFeedModal({
 
                 <TextInput
                   ref={nameInputRef}
-                  style={[styles.input, errorName ? styles.inputError : null]}
-                  value={name}
-                  onChangeText={setName}
+                  style={[styles.input, errors.name ? styles.inputError : null]}
+                  value={formData.name}
+                  onChangeText={(text) => handleInputChange("name", text)}
                   placeholder="Nazwa"
                   selectTextOnFocus
                 />
-                {errorName ? (
-                  <Text style={styles.errorText}>{errorName}</Text>
+                {errors.name ? (
+                  <Text style={styles.errorText}>{errors.name}</Text>
                 ) : null}
 
                 <TextInput
-                  style={[styles.input, errorUrl ? styles.inputError : null]}
-                  value={url}
-                  onChangeText={setUrl}
+                  style={[styles.input, errors.url ? styles.inputError : null]}
+                  value={formData.url}
+                  onChangeText={(text) => handleInputChange("url", text)}
                   placeholder="URL"
                   selectTextOnFocus
                   autoCapitalize="none"
                 />
-                {errorUrl ? (
-                  <Text style={styles.errorText}>{errorUrl}</Text>
+                {errors.url ? (
+                  <Text style={styles.errorText}>{errors.url}</Text>
                 ) : null}
 
                 <View style={styles.buttons}>

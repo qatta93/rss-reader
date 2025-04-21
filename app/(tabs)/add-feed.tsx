@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   Text,
@@ -8,89 +8,53 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Feed } from "@/constants/types";
-import { v4 as uuidv4 } from "uuid";
 import { Colors } from "@/constants/Colors";
+import { useFeedsManager } from "@/hooks/useFeedsManager";
+import { useFormValidation, VALIDATION } from "@/hooks/useFormValidation";
 
 export default function ManageFeeds() {
-  const [feeds, setFeeds] = useState<Feed[]>([]);
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
+  const { addFeed } = useFeedsManager();
+  const {
+    formData,
+    errors,
+    validateForm,
+    validateRssUrl,
+    handleInputChange,
+    resetForm,
+    setErrors,
+  } = useFormValidation();
+
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ name?: string; url?: string }>({});
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadFeeds();
-  }, []);
+  const handleAddFeed = async () => {
+    setFeedbackMessage(null);
 
-  const loadFeeds = async () => {
-    const stored = await AsyncStorage.getItem("feeds");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      parsed.sort(
-        (a: Feed, b: Feed) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      setFeeds(parsed);
-    }
-  };
-
-  const saveFeedsToStorage = async (updatedFeeds: Feed[]) => {
-    await AsyncStorage.setItem("feeds", JSON.stringify(updatedFeeds));
-    setFeeds(updatedFeeds);
-  };
-
-  const validateUrl = (url: string) => {
-    const regex = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i;
-    return regex.test(url);
-  };
-
-  const validateRssUrl = async (url: string) => {
-    try {
-      const response = await fetch(url);
-      const text = await response.text();
-      return text.includes("<rss") || text.includes("<feed"); // RSS 2.0 or Atom
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const handleAddOrUpdate = async () => {
-    const newErrors: typeof errors = {};
-    if (!name) newErrors.name = "Pole obowiązkowe";
-    if (!url) newErrors.url = "Pole obowiązkowe";
-    else if (!validateUrl(url)) newErrors.url = "Niepoprawny adres URL";
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) return;
+    if (!validateForm()) return;
 
     setLoading(true);
-
-    const isValidRss = await validateRssUrl(url);
+    const isValidRss = await validateRssUrl(formData.url);
     setLoading(false);
 
     if (!isValidRss) {
-      setErrors({ ...newErrors, url: "Nieprawidłowy lub niedostępny RSS" });
+      setErrors((prev) => ({ ...prev, url: VALIDATION.INVALID_RSS }));
       return;
     }
 
-    const newFeed: Feed = {
-      id: uuidv4(),
-      name,
-      url,
-      createdAt: new Date().toISOString(),
-    };
+    const success = await addFeed(formData.name, formData.url);
 
-    const updatedFeeds = [...feeds, newFeed];
-    setFeedbackMessage("Feed został pomyślnie dodany!");
+    if (success) {
+      resetForm();
+      setFeedbackMessage("Feed został pomyślnie dodany!");
+    }
+  };
 
-    await saveFeedsToStorage(updatedFeeds);
-    setName("");
-    setUrl("");
-    setErrors({});
+  const handleInputChangeWithFeedback = (
+    field: "name" | "url",
+    value: string
+  ) => {
+    handleInputChange(field, value);
+    if (feedbackMessage) setFeedbackMessage(null);
   };
 
   return (
@@ -101,12 +65,8 @@ export default function ManageFeeds() {
         <TextInput
           style={styles.input}
           placeholder="Nazwa feedu"
-          value={name}
-          onChangeText={(text) => {
-            setName(text);
-            if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
-            if (feedbackMessage) setFeedbackMessage(null);
-          }}
+          value={formData.name}
+          onChangeText={(text) => handleInputChangeWithFeedback("name", text)}
         />
         {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
       </View>
@@ -115,12 +75,8 @@ export default function ManageFeeds() {
         <TextInput
           style={styles.input}
           placeholder="URL RSS feedu"
-          value={url}
-          onChangeText={(text) => {
-            setUrl(text);
-            if (errors.url) setErrors((e) => ({ ...e, url: undefined }));
-            if (feedbackMessage) setFeedbackMessage(null);
-          }}
+          value={formData.url}
+          onChangeText={(text) => handleInputChangeWithFeedback("url", text)}
         />
         {errors.url && <Text style={styles.errorText}>{errors.url}</Text>}
       </View>
@@ -129,10 +85,10 @@ export default function ManageFeeds() {
         <ActivityIndicator
           size="large"
           color={Colors.buttonActive}
-          style={{ marginTop: 10 }}
+          style={styles.activityIndicator}
         />
       ) : (
-        <Button title="Dodaj feed" onPress={handleAddOrUpdate} />
+        <Button title="Dodaj feed" onPress={handleAddFeed} />
       )}
 
       {feedbackMessage && (
@@ -181,5 +137,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginTop: 16,
+  },
+  activityIndicator: {
+    marginTop: 10,
   },
 });
