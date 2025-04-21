@@ -3,7 +3,6 @@ import {
   Text,
   View,
   StyleSheet,
-  useWindowDimensions,
   TouchableOpacity,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
@@ -14,8 +13,6 @@ import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { Colors } from "@/constants/Colors";
 import { ArticleCard } from "@/components/ArticleCard";
 import Animated, {
-  useAnimatedStyle,
-  withTiming,
 } from "react-native-reanimated";
 import { useScrollToTop } from "@/hooks/useScrollToTop"; // Nasz customowy hook
 import { useIsMobile } from "@/hooks/useIsMobile";

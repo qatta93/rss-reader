@@ -2,7 +2,6 @@ import { useCallback } from "react";
 import {
   View,
   StyleSheet,
-  useWindowDimensions,
   Text,
   TouchableOpacity,
 } from "react-native";
@@ -15,7 +14,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { SearchInput } from "@/components/SearchInput";
 import { FeedHeader } from "@/components/FeedHeader";
 import { ArticleCard } from "@/components/ArticleCard";
-import { useScrollToTop } from "@/hooks/useScrollToTop"; // Custom hook for scroll to top
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 import Animated from "react-native-reanimated";
 import { Colors } from "@/constants/Colors";
 import { useIsMobile } from "@/hooks/useIsMobile";

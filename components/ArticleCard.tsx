@@ -1,6 +1,11 @@
 import React from "react";
 import { Pressable, View, StyleSheet } from "react-native";
 import { Card, Title, Paragraph, IconButton } from "react-native-paper";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { Article } from "@/constants/types";
 import { Colors } from "@/constants/Colors";
 
@@ -23,6 +28,18 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   onToggleFavorite,
   isFavorite = false,
 }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handleFavoritePress = () => {
+    scale.value = withSpring(1.3, undefined, () => {
+      scale.value = withSpring(1);
+    });
+    onToggleFavorite();
+  };
 
   const getBackgroundColor = () => {
     if (variant === "favorite") {
@@ -56,15 +73,20 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
               styles.actionContainer,
               isMobile && variant === "feed" && styles.actionContainerMobile,
             ]}>
-            <Pressable onPress={onToggleFavorite}>
-              <IconButton
-                icon={
-                  variant === "favorite" || isFavorite
-                    ? "heart"
-                    : "heart-outline"
-                }
-                size={20}
-              />
+            <Pressable
+              onPress={handleFavoritePress}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.favoriteButtonContainer}>
+              <Animated.View style={animatedStyle}>
+                <IconButton
+                  icon={
+                    variant === "favorite" || isFavorite
+                      ? "heart"
+                      : "heart-outline"
+                  }
+                  size={24}
+                />
+              </Animated.View>
             </Pressable>
           </View>
         </Card.Content>
@@ -110,5 +132,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
+  },
+  favoriteButtonContainer: {
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
