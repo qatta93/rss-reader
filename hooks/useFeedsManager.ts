@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Article, Feed } from "@/constants/types";
-import { v4 as uuidv4 } from "uuid";
 
 type FilterType = "all" | "read" | "unread";
 
@@ -170,17 +169,57 @@ export const useFeedsManager = () => {
       }
     };
 
-   const addFeed = async (name: string, url: string) => {
-     const newFeed: Feed = {
-       id: uuidv4(),
-       name,
-       url,
-       createdAt: new Date().toISOString(),
-     };
+   const generateUniqueId = () => {
+     const timestamp = new Date().getTime();
+     const randomSuffix = Math.floor(Math.random() * 10000);
+     return `feed_${timestamp}_${randomSuffix}`;
+   };
 
-     const updatedFeeds = [...feeds, newFeed];
-     await saveFeedsToStorage(updatedFeeds);
-     return true;
+   const addFeed = async (name: string, url: string) => {
+     try {
+       const newFeed: Feed = {
+         id: generateUniqueId(),
+         name,
+         url,
+         createdAt: new Date().toISOString(),
+       };
+
+       const updatedFeeds = [...feeds, newFeed];
+       await saveFeedsToStorage(updatedFeeds);
+       
+       try {
+         const res = await axios.get(
+           "https://api.rss2json.com/v1/api.json",
+           {
+             params: { rss_url: url },
+           }
+         );
+         
+         if (res.data && res.data.items) {
+           const newArticles = res.data.items.map((item: any) => ({
+             title: item.title || "",
+             pubDate: item.pubDate,
+             link: item.link,
+             content: item.content || item.description,
+             guid: item.guid,
+             feedId: newFeed.id,
+             read: false,
+           }));
+           
+           setArticlesByFeed(prev => ({
+             ...prev,
+             [newFeed.id]: newArticles
+           }));
+         }
+       } catch (error) {
+         console.error(`Error fetching articles for new feed ${name}:`, error);
+       }
+       
+       return true;
+     } catch (error) {
+       console.error("Error adding feed:", error);
+       return false;
+     }
    };
 
   const getFilteredArticles = () => {

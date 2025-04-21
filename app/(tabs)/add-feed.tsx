@@ -1,64 +1,26 @@
-import { useState } from "react";
 import {
-  ScrollView,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   StyleSheet,
   View,
   ActivityIndicator,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
-import { useFeedsManager } from "@/hooks/useFeedsManager";
-import { useFormValidation, VALIDATION } from "@/hooks/useFormValidation";
+import { useAddFeedForm } from "@/hooks/useAddFeedForm";
 
 export default function ManageFeeds() {
-  const { addFeed } = useFeedsManager();
   const {
     formData,
     errors,
-    validateForm,
-    validateRssUrl,
-    handleInputChange,
-    resetForm,
-    setErrors,
-  } = useFormValidation();
-
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleAddFeed = async () => {
-    setFeedbackMessage(null);
-
-    if (!validateForm()) return;
-
-    setLoading(true);
-    const isValidRss = await validateRssUrl(formData.url);
-    setLoading(false);
-
-    if (!isValidRss) {
-      setErrors((prev) => ({ ...prev, url: VALIDATION.INVALID_RSS }));
-      return;
-    }
-
-    const success = await addFeed(formData.name, formData.url);
-
-    if (success) {
-      resetForm();
-      setFeedbackMessage("Feed został pomyślnie dodany!");
-    }
-  };
-
-  const handleInputChangeWithFeedback = (
-    field: "name" | "url",
-    value: string
-  ) => {
-    handleInputChange(field, value);
-    if (feedbackMessage) setFeedbackMessage(null);
-  };
+    feedbackMessage,
+    loading,
+    handleChange,
+    handleSubmit,
+  } = useAddFeedForm();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Co dziś przeczytasz?</Text>
 
       <View style={styles.inputGroup}>
@@ -66,7 +28,7 @@ export default function ManageFeeds() {
           style={styles.input}
           placeholder="Nazwa feedu"
           value={formData.name}
-          onChangeText={(text) => handleInputChangeWithFeedback("name", text)}
+          onChangeText={(text) => handleChange("name", text)}
         />
         {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
       </View>
@@ -76,25 +38,23 @@ export default function ManageFeeds() {
           style={styles.input}
           placeholder="URL RSS feedu"
           value={formData.url}
-          onChangeText={(text) => handleInputChangeWithFeedback("url", text)}
+          onChangeText={(text) => handleChange("url", text)}
         />
         {errors.url && <Text style={styles.errorText}>{errors.url}</Text>}
       </View>
 
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={Colors.buttonActive}
-          style={styles.activityIndicator}
-        />
+        <ActivityIndicator size="large" style={styles.activityIndicator} />
       ) : (
-        <Button title="Dodaj feed" onPress={handleAddFeed} />
+        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+          <Text style={styles.buttonText}>Dodaj feed</Text>
+        </TouchableOpacity>
       )}
 
       {feedbackMessage && (
-        <Text style={styles.successText}>{feedbackMessage}</Text>
+        <Text style={styles.feedbackOverlay}>{feedbackMessage}</Text>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -132,13 +92,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
   },
-  successText: {
-    color: Colors.successText,
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 16,
-  },
   activityIndicator: {
     marginTop: 10,
+  },
+  button: {
+    backgroundColor: Colors.buttonActive,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  buttonText: {
+    color: Colors.background,
+    fontSize: 16,
+  },
+  feedbackOverlay: {
+    color: Colors.successText,
+    textAlign: "center",
+    marginTop: 16,
   },
 });

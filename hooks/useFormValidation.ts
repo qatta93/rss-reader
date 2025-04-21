@@ -27,10 +27,14 @@ export function useFormValidation() {
 
   const validateRssUrl = async (url: string) => {
     try {
-      const response = await fetch(url);
-      const text = await response.text();
-      return text.includes("<rss") || text.includes("<feed"); // RSS 2.0 or Atom
+      const response = await fetch(
+        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`
+      );
+      const data = await response.json();
+      
+      return data.status === "ok";
     } catch (error) {
+      console.error("Error validating RSS URL:", error);
       return false;
     }
   };
