@@ -195,6 +195,27 @@ export default function Home() {
     );
   }
 
+  const handleDeleteFeed = async (feedId: string) => {
+    const updatedFeeds = feeds.filter((f) => f.id !== feedId);
+    await AsyncStorage.setItem("feeds", JSON.stringify(updatedFeeds));
+    setFeeds(updatedFeeds);
+
+    const updatedArticles = { ...articlesByFeed };
+    delete updatedArticles[feedId];
+    setArticlesByFeed(updatedArticles);
+
+    const updatedRead = { ...readArticles };
+    delete updatedRead[feedId];
+    await AsyncStorage.setItem("readArticles", JSON.stringify(updatedRead));
+    setReadArticles(updatedRead);
+
+    const updatedFav = { ...favorites };
+    delete updatedFav[feedId];
+    await AsyncStorage.setItem("favorites", JSON.stringify(updatedFav));
+    setFavorites(updatedFav);
+  };
+
+
   return (
     <>
       <ScrollView style={{ padding: 10 }}>
@@ -307,6 +328,7 @@ export default function Home() {
         feed={selectedFeed}
         onClose={() => setEditModalVisible(false)}
         onSave={handleSaveFeed}
+        onDelete={handleDeleteFeed}
       />
     </>
   );
