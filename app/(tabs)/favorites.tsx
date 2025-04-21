@@ -18,12 +18,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useScrollToTop } from "@/hooks/useScrollToTop"; // Nasz customowy hook
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function Favorites() {
   const { favoriteArticles, loading, fetchFavorites, removeFromFavorites } =
     useFavoritesManager();
-  const { width } = useWindowDimensions();
-  const isMobile = width < 768;
+  const isMobile = useIsMobile();
+  
   const router = useRouter();
 
   const { scrollViewRef, scrollHandler, scrollToTop, scrollToTopStyle } =

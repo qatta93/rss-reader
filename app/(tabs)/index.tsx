@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import {
-  ScrollView,
   View,
   StyleSheet,
   useWindowDimensions,
@@ -17,11 +16,9 @@ import { SearchInput } from "@/components/SearchInput";
 import { FeedHeader } from "@/components/FeedHeader";
 import { ArticleCard } from "@/components/ArticleCard";
 import { useScrollToTop } from "@/hooks/useScrollToTop"; // Custom hook for scroll to top
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Colors } from "@/constants/Colors";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function Home() {
   const {
@@ -46,8 +43,7 @@ export default function Home() {
   } = useFeedsManager();
 
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const isMobile = width < 768;
+  const isMobile = useIsMobile();
 
   const { scrollViewRef, scrollHandler, scrollToTop, scrollToTopStyle } =
     useScrollToTop();
