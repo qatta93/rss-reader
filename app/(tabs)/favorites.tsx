@@ -134,6 +134,7 @@ export default function Favorites() {
                     pubDate: article.pubDate,
                     content: article.content,
                     link: article.link,
+                    from: "favorites",
                   },
                 });
               }}>

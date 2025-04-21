@@ -278,6 +278,7 @@ export default function Home() {
                         pubDate: item.pubDate,
                         content: item.content,
                         link: item.link,
+                        from: "home",
                       },
                     });
                   }}>

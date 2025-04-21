@@ -7,16 +7,19 @@ import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 
 export default function Article() {
-  const { title, pubDate, content, link } = useLocalSearchParams();
+  const { title, pubDate, content, link, from } = useLocalSearchParams();
   const { width } = useWindowDimensions();
   const router = useRouter();
+
+  const headerTitle = from === "favorites" ? "Ulubione" : "Lista artykułów";
 
   return (
     <>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Lista artykułów" />
+        <Appbar.Content title={headerTitle} />
       </Appbar.Header>
+
       <ScrollView style={{ padding: 16 }}>
         <Title>{title}</Title>
         <Paragraph>{pubDate}</Paragraph>
