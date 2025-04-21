@@ -13,10 +13,23 @@ export default function Article() {
 
   const headerTitle = from === "favorites" ? "Ulubione" : "Lista artykułów";
 
+  const goBackToSource = () => {
+    switch (from) {
+      case "favorites":
+        router.replace("/favorites");
+        break;
+      case "home":
+        router.replace("/");
+        break;
+      default:
+        router.replace("/");
+    }
+  };
+
   return (
     <>
       <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.BackAction onPress={() => goBackToSource()} />
         <Appbar.Content title={headerTitle} />
       </Appbar.Header>
 
